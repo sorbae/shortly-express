@@ -3,20 +3,32 @@ const Promise = require('bluebird');
 
 module.exports.createSession = (req, res, next) => {
   let cookie = req.cookies;
-  // console.log('----------', req.body);
-  req.session = {};
+  console.log(req);
 
-  if (!cookie) {
-    models.Sessions.create().then(function(results) {
-      models.Sessions.get({id: results.insertId}).then(function(session) {
-        let sessionHash = session.hash;
-        req.session = {
-
-        }
-        res.writeHead(200, {cookie: sessionHash});
-      })
+  if (cookie && Object.keys(cookie).length) {
+    console.log('IF COOKIE EXISTS: REQ ', req);
+    req.session = {
+      hash: cookie
+    }
+    next();
+    // verify cookie === session.hash
+    //   if exists
+    //     assign username & userId property to req.session
+  } else {
+    console.log('IF COOKIE DOESNT EXIST: REQ ', req);
+    models.Sessions.create()
+    .then((results) => {
+      return models.Sessions.get({id: results.insertId})
+    })
+    .then((session) => {
+      let sessionHash = { value: session.hash }
+      res.cookies = {shortlyid: sessionHash};
+      req.session = session;
+      req.session.user = {username: req.body.username}
+      next();
     })
   }
+
 
 
 
@@ -31,7 +43,6 @@ module.exports.createSession = (req, res, next) => {
   // })
 
 
-  next();
 };
 // check the cookie does exist or not:
   // if exist, get the parsed cookie
