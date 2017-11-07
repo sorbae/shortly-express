@@ -17,17 +17,17 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 
 
-app.get('/', 
+app.get('/',
 (req, res) => {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create',
 (req, res) => {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/links',
 (req, res, next) => {
   models.Links.getAll()
     .then(links => {
@@ -38,7 +38,15 @@ app.get('/links',
     });
 });
 
-app.post('/links', 
+app.get('/signup', (req, res) => {
+  res.render('signup');
+});
+
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
+app.post('/links',
 (req, res, next) => {
   var url = req.body.url;
   if (!models.Links.isValidUrl(url)) {
@@ -78,6 +86,22 @@ app.post('/links',
 // Write your authentication routes here
 /************************************************************/
 
+app.post('/signup', (req, res) => {
+   return models.Users.create(req.body)
+   .then((result) => {
+    if (result) {
+      res.redirect('/');
+    }
+  }).catch((err) => res.redirect('/signup'))
+});
+
+
+app.post('/login', (req, res) => {
+  return models.Users.get({username: req.body.username})
+    .then((result) => models.Users.compare(req.body.password, result.password, result.salt))
+    .then((passwordMatches) => passwordMatches ? res.redirect('/') : res.redirect('/login'))
+    .catch(() => res.redirect('/login'))
+});
 
 
 /************************************************************/
